@@ -155,7 +155,7 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     config.project_name = PROJECT_NAME
     config.run_description = """
         GPT XTTS training
-        """,
+        """
     config.dashboard_logger = DASHBOARD_LOGGER
     config.logger_uri = LOGGER_URI
     config.audio = audio_config
