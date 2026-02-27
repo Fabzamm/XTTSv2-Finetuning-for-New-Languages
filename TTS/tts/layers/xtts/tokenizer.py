@@ -522,6 +522,7 @@ def _expand_currency(m, lang="en", currency="USD"):
         "tr": ", ",
         "hu": ", ",
         "ko": ", ",
+        "mt": " u ",
     }
 
     if amount.is_integer():
@@ -545,11 +546,33 @@ def expand_numbers_multilingual(text, lang="en"):
         text = zh_num2words()(text)
     elif lang == "mt":
         from masri.transcribe.num2text import num2text as mt_num2text
-        text = re.sub(_currency_re["GBP"], lambda m: _expand_currency(m, "en", "GBP"), text)  # fallback
-        text = re.sub(_currency_re["USD"], lambda m: _expand_currency(m, "en", "USD"), text)
-        text = re.sub(_currency_re["EUR"], lambda m: _expand_currency(m, "en", "EUR"), text)
-        # num2text handles integers; wrap it for regex substitution
-        text = re.sub(_number_re, lambda m: mt_num2text(int(m.group(0))), text)
+        
+        def _expand_currency_mt(m, currency_symbol):
+            amount_str = re.sub(r"[^\d.,]", "", m.group(0).replace(",", "."))
+            try:
+                amount = float(amount_str)
+            except ValueError:
+                return m.group(0)
+
+            integer_part = int(amount)
+            decimal_part = round((amount - integer_part) * 100)
+
+            currency_names = {
+                "EUR": ("ewro", "ċenteżmu"),
+                "USD": ("dollaru", "ċenteżmu"),
+                "GBP": ("lira sterlina", "penny"),
+            }
+            main_name, cent_name = currency_names[currency_symbol]
+
+            result = mt_num2text(integer_part).strip() + " " + main_name
+            if decimal_part > 0:
+                result += " u " + mt_num2text(decimal_part).strip() + " " + cent_name
+            return result
+
+        text = re.sub(_currency_re["GBP"], lambda m: _expand_currency_mt(m, "GBP"), text)
+        text = re.sub(_currency_re["USD"], lambda m: _expand_currency_mt(m, "USD"), text)
+        text = re.sub(_currency_re["EUR"], lambda m: _expand_currency_mt(m, "EUR"), text)
+        text = re.sub(_number_re, lambda m: mt_num2text(int(m.group(0))).strip(), text)
         
     else:
         if lang in ["en", "ru"]:
