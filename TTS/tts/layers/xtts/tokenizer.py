@@ -229,6 +229,14 @@ _abbreviations = {
             # Korean doesn't typically use abbreviations in the same way as Latin-based scripts.
         ]
     ],
+    "mt": [
+        (re.compile("\\b%s\\." % x[0], re.IGNORECASE), x[1])
+        for x in [
+            ("dr", "doktor"),  # doctor
+            ("prof", "professur"),  # professor
+            # Add other Maltese abbreviations here if needed.
+        ]
+    ],
 }
 
 
@@ -425,6 +433,19 @@ _symbols_multilingual = {
             ("°", " 도 "),
         ]
     ],
+    "mt": [
+        # Maltese
+        (re.compile(r"%s" % re.escape(x[0]), re.IGNORECASE), x[1])
+        for x in [
+            ("&", " u "),
+            ("@", " at "),
+            ("%", " fil-mija "),
+            ("$", " dollaru "),
+            ("£", " lira "),
+            ("°", " grad "),
+            ("€", " ewro "),
+        ]
+    ]
 }
 
 
@@ -522,6 +543,14 @@ def _expand_number(m, lang="en"):
 def expand_numbers_multilingual(text, lang="en"):
     if lang == "zh":
         text = zh_num2words()(text)
+    elif lang == "mt":
+        from masri.transcribe.num2text import num2text as mt_num2text
+        text = re.sub(_currency_re["GBP"], lambda m: _expand_currency(m, "en", "GBP"), text)  # fallback
+        text = re.sub(_currency_re["USD"], lambda m: _expand_currency(m, "en", "USD"), text)
+        text = re.sub(_currency_re["EUR"], lambda m: _expand_currency(m, "en", "EUR"), text)
+        # num2text handles integers; wrap it for regex substitution
+        text = re.sub(_number_re, lambda m: mt_num2text(int(m.group(0))), text)
+        
     else:
         if lang in ["en", "ru"]:
             text = re.sub(_comma_number_re, _remove_commas, text)
@@ -554,6 +583,11 @@ def multilingual_cleaners(text, lang):
         text = text.replace("İ", "i")
         text = text.replace("Ö", "ö")
         text = text.replace("Ü", "ü")
+    if lang == "mt":
+        # In Maltese, currency is spoken after the number: "€20" → "20€"
+        text = re.sub(r'€\s*(\d+(?:[.,]\d+)?)', r'\1€', text)
+        text = re.sub(r'\$\s*(\d+(?:[.,]\d+)?)', r'\1$', text)
+        text = re.sub(r'£\s*(\d+(?:[.,]\d+)?)', r'\1£', text)
     text = lowercase(text)
     text = expand_numbers_multilingual(text, lang)
     text = expand_abbreviations_multilingual(text, lang)
@@ -611,6 +645,7 @@ class VoiceBpeTokenizer:
             "ja": 71,
             "hu": 224,
             "ko": 95,
+            "mt": 250,
         }
 
     @cached_property
@@ -628,12 +663,18 @@ class VoiceBpeTokenizer:
             )
 
     def preprocess_text(self, txt, lang):
-        if lang in {"ar", "cs", "de", "en", "es", "fr", "hu", "it", "nl", "pl", "pt", "ru", "tr", "zh", "ko"}:
+        if lang in {"ar", "cs", "de", "en", "es", "fr", "hu", "it", "nl", "pl", "pt", "ru", "tr", "zh", "ko", "mt"}:
             txt = multilingual_cleaners(txt, lang)
             if lang == "zh":
                 txt = chinese_transliterate(txt)
             if lang == "ko":
                 txt = korean_transliterate(txt)
+            if lang == "mt":
+                from masri.tokeniser.km_tokeniser import KMTokeniser
+                tokeniser = KMTokeniser()
+                tokens = tokeniser.tokenise(txt)
+                txt = " ".join(tokens)
+                txt = collapse_whitespace(txt)
         elif lang == "ja":
             txt = japanese_cleaners(txt, self.katsu)
         elif lang == "hi":
