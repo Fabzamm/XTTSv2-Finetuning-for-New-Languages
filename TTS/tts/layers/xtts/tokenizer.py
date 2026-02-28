@@ -547,6 +547,10 @@ def expand_numbers_multilingual(text, lang="en"):
     elif lang == "mt":
         from masri.transcribe.num2text import num2text as mt_num2text
         
+        # Remove ALL thousands-separator commas from digit sequences first
+        # This handles 1,000,000 → 1000000 regardless of currency symbol position
+        text = re.sub(r'(\d{1,3})(,\d{3})+', lambda m: m.group(0).replace(',', ''), text)
+        
         def _expand_currency_mt(m, currency_symbol):
             amount_str = re.sub(r"[^\d.,]", "", m.group(0).replace(",", "."))
             try:
@@ -608,9 +612,9 @@ def multilingual_cleaners(text, lang):
         text = text.replace("Ü", "ü")
     if lang == "mt":
         # In Maltese, currency is spoken after the number: "€20" → "20€"
-        text = re.sub(r'€\s*(\d+(?:[.,]\d+)?)', r'\1€', text)
-        text = re.sub(r'\$\s*(\d+(?:[.,]\d+)?)', r'\1$', text)
-        text = re.sub(r'£\s*(\d+(?:[.,]\d+)?)', r'\1£', text)
+        text = re.sub(r'€\s*([\d,]+(?:\.\d+)?)', r'\1€', text)
+        text = re.sub(r'\$\s*([\d,]+(?:\.\d+)?)', r'\1$', text)
+        text = re.sub(r'£\s*([\d,]+(?:\.\d+)?)', r'\1£', text)
     text = lowercase(text)
     text = expand_numbers_multilingual(text, lang)
     text = expand_abbreviations_multilingual(text, lang)
