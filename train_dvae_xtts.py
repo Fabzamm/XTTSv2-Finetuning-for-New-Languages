@@ -62,7 +62,7 @@ def train(output_path, train_csv_path, eval_csv_path="", language="en", lr=5e-6,
     config_dataset = BaseDatasetConfig(
         formatter="coqui",
         dataset_name="large",
-        path="os.path.dirname(train_csv_path)",
+        path=os.path.dirname(train_csv_path),
         meta_file_train=os.path.basename(train_csv_path),
         meta_file_val=os.path.basename(eval_csv_path),
         language=language,
