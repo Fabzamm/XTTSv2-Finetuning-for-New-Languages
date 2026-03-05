@@ -6,6 +6,9 @@ from tokenizers.models import BPE
 from tokenizers.pre_tokenizers import Whitespace
 from tokenizers.trainers import BpeTrainer
 import json
+from TTS.tts.layers.xtts.tokenizer import multilingual_cleaners
+from masri.tokeniser.km_tokeniser import KMTokeniser
+from TTS.tts.utils.text.cleaners import collapse_whitespace
 
 def combine_tokenizers(old_tokenizer, new_tokenizer, save_dir):
     # Load both the json files, take the union, and store it
@@ -50,8 +53,17 @@ def extend_tokenizer(args):
     existing_tokenizer.model.save(old_tokenizer_path)
 
     # train new tokenizer
+    tokeniser = KMTokeniser()
+
+    def clean_text(text):
+        text = multilingual_cleaners(text, "mt")
+        tokens = tokeniser.tokenise(text)
+        text = " ".join(tokens)
+        text = collapse_whitespace(text)
+        return text
+    
     traindf = pd.read_csv(args.metadata_path, sep="|")
-    texts = traindf.text.to_list()
+    texts = [clean_text(t) for t in traindf.text.to_list()]
 
     new_tokenizer = Tokenizer(BPE())
     new_tokenizer.pre_tokenizer = Whitespace()
