@@ -31,12 +31,14 @@ def create_xtts_trainer_parser():
                         help="Max audio length")
     parser.add_argument("--max_text_length", type=int, default=200,
                         help="Max text length")
-    parser.add_argument("--weight_decay", type=float, default=1e-2,
+    parser.add_argument("--weight_decay", type=float, default=1e-2,Z
                         help="Weight decay")
     parser.add_argument("--lr", type=float, default=5e-6,
                         help="Learning rate")
     parser.add_argument("--save_step", type=int, default=5000,
                         help="Save step")
+    parser.add_argument("--restore_path", type=str, default=None,
+                        help="Path to checkpoint to resume training from")
 
     return parser
 
@@ -191,7 +193,7 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     # init the trainer and 🚀
     trainer = Trainer(
         TrainerArgs(
-            restore_path=None,  # xtts checkpoint is restored via xtts_checkpoint key so no need of restore it using Trainer restore_path parameter
+            restore_path=args.restore_path,  # xtts checkpoint is restored via xtts_checkpoint key so no need of restore it using Trainer restore_path parameter
             skip_train_epoch=False,
             start_with_eval=START_WITH_EVAL,
             grad_accum_steps=GRAD_ACUMM_STEPS
