@@ -31,7 +31,7 @@ def create_xtts_trainer_parser():
                         help="Max audio length")
     parser.add_argument("--max_text_length", type=int, default=200,
                         help="Max text length")
-    parser.add_argument("--weight_decay", type=float, default=1e-2,Z
+    parser.add_argument("--weight_decay", type=float, default=1e-2,
                         help="Weight decay")
     parser.add_argument("--lr", type=float, default=5e-6,
                         help="Learning rate")
@@ -39,12 +39,14 @@ def create_xtts_trainer_parser():
                         help="Save step")
     parser.add_argument("--restore_path", type=str, default=None,
                         help="Path to checkpoint to resume training from")
+    parser.add_argument("--save_n_checkpoints", type=int, default=1,
+                        help="Number of checkpoints to keep")
 
     return parser
 
 
 
-def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_audio_length, max_text_length, lr, weight_decay, save_step):
+def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_audio_length, max_text_length, lr, weight_decay, save_step, save_n_checkpoints, restore_path=None):
     #  Logging parameters
     RUN_NAME = "GPT_XTTS_FT"
     PROJECT_NAME = "XTTS_trainer"
@@ -168,7 +170,7 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     config.plot_step = 100
     config.log_model_step = 100
     config.save_step = save_step
-    config.save_n_checkpoints = 1
+    config.save_n_checkpoints = save_n_checkpoints  # was hardcoded to 1
     config.save_checkpoints = True
     config.print_eval = False
     config.optimizer = "AdamW"
@@ -193,7 +195,7 @@ def train_gpt(metadatas, num_epochs, batch_size, grad_acumm, output_path, max_au
     # init the trainer and 🚀
     trainer = Trainer(
         TrainerArgs(
-            restore_path=args.restore_path,  # xtts checkpoint is restored via xtts_checkpoint key so no need of restore it using Trainer restore_path parameter
+            restore_path=restore_path,  # xtts checkpoint is restored via xtts_checkpoint key so no need of restore it using Trainer restore_path parameter
             skip_train_epoch=False,
             start_with_eval=START_WITH_EVAL,
             grad_accum_steps=GRAD_ACUMM_STEPS
@@ -233,7 +235,9 @@ if __name__ == "__main__":
         lr=args.lr,
         max_text_length=args.max_text_length,
         max_audio_length=args.max_audio_length,
-        save_step=args.save_step
+        save_step=args.save_step,
+        save_n_checkpoints=args.save_n_checkpoints,
+        restore_path=args.restore_path
     )
 
     print(f"Checkpoint saved in dir: {trainer_out_path}")
