@@ -23,11 +23,11 @@ def create_parser():
                         help="Language code")
     parser.add_argument("--output_path", type=str, default="output.wav",
                         help="Path to save output audio")
-    parser.add_argument("--temperature", type=float, default=0.1)
+    parser.add_argument("--temperature", type=float, default=0.75)
     parser.add_argument("--length_penalty", type=float, default=1.0)
-    parser.add_argument("--repetition_penalty", type=float, default=10.0)
-    parser.add_argument("--top_k", type=int, default=10)
-    parser.add_argument("--top_p", type=float, default=0.3)
+    parser.add_argument("--repetition_penalty", type=float, default=5.0)
+    parser.add_argument("--top_k", type=int, default=50)
+    parser.add_argument("--top_p", type=float, default=0.85)
 
     return parser
 
@@ -76,4 +76,5 @@ def run_inference(args):
 if __name__ == "__main__":
     parser = create_parser()
     args = parser.parse_args()
+
     run_inference(args)
