@@ -28,6 +28,8 @@ def create_parser():
     parser.add_argument("--repetition_penalty", type=float, default=5.0)
     parser.add_argument("--top_k", type=int, default=50)
     parser.add_argument("--top_p", type=float, default=0.85)
+    parser.add_argument("--speed", type=float, default=1.0,
+                        help="Speed rate of the generated audio")
 
     return parser
 
@@ -66,6 +68,7 @@ def run_inference(args):
             repetition_penalty=args.repetition_penalty,
             top_k=args.top_k,
             top_p=args.top_p,
+            speed=args.speed,
         )
         wav_chunks.append(torch.tensor(wav_chunk["wav"]))
 
