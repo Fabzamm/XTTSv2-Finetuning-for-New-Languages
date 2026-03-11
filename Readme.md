@@ -1,9 +1,8 @@
-# XTTSv2 Finetuning Guide for New Languages
+# XTTSv2 Finetuning Guide for New Languages - Maltese
 
-This guide provides instructions for finetuning XTTSv2 on a new language, using Vietnamese (`vi`) as an example.
+This is a forked version of [anhnh2002/XTTSv2-Finetuning-for-New-Languages](https://github.com/anhnh2002/XTTSv2-Finetuning-for-New-Languages).
 
-[UPDATE] A finetuned model for Vietnamese is now available at [anhnh2002/vnTTS](https://huggingface.co/anhnh2002/vnTTS) on Hugging Face
-
+This guide provides instructions for finetuning XTTSv2 on a new language, using Maltese (`mt`) as an example.
 
 ## Table of Contents
 1. [Installation](#1-installation)
@@ -16,10 +15,18 @@ This guide provides instructions for finetuning XTTSv2 on a new language, using 
 
 ## 1. Installation
 
+Method 1: Using Google Colab
+
+Use the notebook [Provide Link]
+
+Method 2: Using Local Machine
+
+Make sure to use Python 3.10.
+
 First, clone the repository and install the necessary dependencies:
 
 ```
-git clone https://github.com/nguyenhoanganh2002/XTTSv2-Finetuning-for-New-Languages.git
+git clone https://github.com/Fabzamm/XTTSv2-Finetuning-for-New-Languages.git
 cd XTTSv2-Finetuning-for-New-Languages
 pip install -r requirements.txt
 ```
@@ -76,7 +83,7 @@ python download_checkpoint.py --output_path checkpoints/
 Extend the vocabulary and adjust the configuration with:
 
 ```bash
-python extend_vocab_config.py --output_path=checkpoints/ --metadata_path datasets/metadata_train.csv --language vi --extended_vocab_size 2000
+python extend_vocab_config.py --output_path=checkpoints/ --metadata_path datasets/metadata_train.csv --language mt --extended_vocab_size 2000
 ```
 
 ## 5. DVAE Finetuning (Optional)
@@ -88,7 +95,7 @@ CUDA_VISIBLE_DEVICES=0 python train_dvae_xtts.py \
 --output_path=checkpoints/ \
 --train_csv_path=datasets/metadata_train.csv \
 --eval_csv_path=datasets/metadata_eval.csv \
---language="vi" \
+--language="mt" \
 --num_epochs=5 \
 --batch_size=512 \
 --lr=5e-6
@@ -104,7 +111,7 @@ CUDA_VISIBLE_DEVICES=0 python train_gpt_xtts.py \
 --output_path=checkpoints/ \
 --train_csv_path=datasets/metadata_train.csv \
 --eval_csv_path=datasets/metadata_eval.csv \
---language="vi" \
+--language="mt" \
 --num_epochs=5 \
 --batch_size=8 \
 --grad_acumm=2 \
@@ -112,21 +119,8 @@ CUDA_VISIBLE_DEVICES=0 python train_gpt_xtts.py \
 --max_audio_length=255995 \
 --weight_decay=1e-2 \
 --lr=5e-6 \
---save_step=2000
-```
-[UPDATE - Supports training multiple datasets. Format metadatas parameter as follows: `path_to_train_csv_dataset-1,path_to_eval_csv_dataset-1,language_dataset-1 path_to_train_csv_dataset-2,path_to_eval_csv_dataset-2,language_dataset-2 ...`]
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_gpt_xtts.py \
---output_path checkpoints/ \
---metadatas datasets-1/metadata_train.csv,datasets-1/metadata_eval.csv,vi datasets-2/metadata_train.csv,datasets-2/metadata_eval.csv,vi \
---num_epochs 5 \
---batch_size 8 \
---grad_acumm 4 \
---max_text_length 400 \
---max_audio_length 330750 \
---weight_decay 1e-2 \
---lr 5e-6 \
---save_step 50000
+--save_step=2000 \
+--save_n_checkpoints=10
 ```
 
 ## 7. Usage Example
@@ -160,9 +154,9 @@ XTTS_MODEL.to(device)
 print("Model loaded successfully!")
 
 # Inference
-tts_text = "Good to see you."
+tts_text = "Toni tagħna tani tina talli tajtu tuta tajba."
 speaker_audio_file = "ref.wav"
-lang = "vi"
+lang = "mt"
 
 gpt_cond_latent, speaker_embedding = XTTS_MODEL.get_conditioning_latents(
     audio_path=speaker_audio_file,
