@@ -62,14 +62,32 @@ def extend_tokenizer(args):
         text = collapse_whitespace(text)
         return text
     
-    traindf = pd.read_csv(args.metadata_path, sep="|")
-    texts = [clean_text(t) for t in traindf.text.to_list()]
+    def text_iterator():
+        # Source 1: always use the CSV
+        df = pd.read_csv(args.metadata_path, sep="|")
+        for text in df["text"].dropna().tolist():
+            yield clean_text(text)
+    
+        # Source 2: only if --use_korpus is passed
+        if args.use_korpus:
+            from datasets import load_dataset
+            korpus = load_dataset(
+                "MLRS/korpus_malti",
+                "shuffled_sampled",
+                revision="4.3.alpha",
+                split="train",
+                streaming=True
+            )
+            for i, row in enumerate(korpus):
+                if i >= args.korpus_max_samples:
+                    break
+                yield clean_text(row["text"])
 
     new_tokenizer = Tokenizer(BPE())
     new_tokenizer.pre_tokenizer = Whitespace()
 
     trainer = BpeTrainer(special_tokens=[f"[{args.language}]"], vocab_size=args.extended_vocab_size)
-    new_tokenizer.train_from_iterator(iter(texts), trainer=trainer)
+    new_tokenizer.train_from_iterator(text_iterator(), trainer=trainer)
     new_tokenizer.add_special_tokens([f"[{args.language}]"])
 
     new_tokenizer_path = os.path.join(root, "new_tokenizer/")
@@ -106,6 +124,8 @@ if __name__ == "__main__":
     parser.add_argument("--metadata_path", type=str, required=True, help="")
     parser.add_argument("--language", type=str, required=True, help="")
     parser.add_argument("--extended_vocab_size", default=2000, type=int, required=True, help="")
+    parser.add_argument("--use_korpus", action="store_true", help="Also train on korpus_malti")
+    parser.add_argument("--korpus_max_samples", type=int, default=500_000, help="Max sentences from korpus_malti")
 
     args = parser.parse_args()
 
