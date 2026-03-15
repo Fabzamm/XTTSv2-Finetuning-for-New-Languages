@@ -10,6 +10,17 @@ from TTS.tts.layers.xtts.tokenizer import multilingual_cleaners
 from masri.tokeniser.km_tokeniser import KMTokeniser
 from TTS.tts.utils.text.cleaners import collapse_whitespace
 
+MALTESE_CHARS = set(
+    "abċdefġgħhiiejklmnopqrstuvwxżz"
+    "ABĊDEFĠGĦHIIEJKLMNOPQRSTUVWXŻZ"
+    "àèìòùáéíóúäëïöüâêîôû"
+    "0123456789"
+    " .,;:!?()-\"'\"\"—–\n"
+)
+
+def is_valid_maltese(text):
+    return all(c in MALTESE_CHARS for c in text)
+
 def combine_tokenizers(old_tokenizer, new_tokenizer, save_dir):
     # Load both the json files, take the union, and store it
     json1 = json.load(open(os.path.join(old_tokenizer, 'vocab.json')))
@@ -78,10 +89,14 @@ def extend_tokenizer(args):
                 split="train",
                 streaming=True
             )
-            for i, row in enumerate(korpus):
-                if i >= args.korpus_max_samples:
+            count = 0
+            for row in korpus:
+                if count >= args.korpus_max_samples:
                     break
-                yield clean_text(row["text"])
+                text = row["text"]
+                if is_valid_maltese(text):
+                    yield clean_text(text)
+                    count += 1
 
     new_tokenizer = Tokenizer(BPE())
     new_tokenizer.pre_tokenizer = Whitespace()
