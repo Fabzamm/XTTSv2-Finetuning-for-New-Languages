@@ -11,9 +11,10 @@ from masri.tokeniser.km_tokeniser import KMTokeniser
 from TTS.tts.utils.text.cleaners import collapse_whitespace
 
 MALTESE_CHARS = set(
-    "abċdefġgħhiiejklmnopqrstuvwxżz"
-    "ABĊDEFĠGĦHIIEJKLMNOPQRSTUVWXŻZ"
-    "àèìòùáéíóúäëïöüâêîôû"
+    "abċdefġgħhiejklmnopqrstuvwxżz"
+    "ABĊDEFĠGĦHIEJKLMNOPQRSTUVWXŻZ"
+    "àèìòùáéíóú"
+    "ÀÈÌÒÙÁÉÍÓÚ"
     "0123456789"
     " .,;:!?()-\"'\"\"—–\n"
 )
