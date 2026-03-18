@@ -612,9 +612,9 @@ def multilingual_cleaners(text, lang):
         text = text.replace("Ü", "ü")
     if lang == "mt":
         # In Maltese, currency is spoken after the number: "€20" → "20€"
-        text = re.sub(r'€\s*([\d,]+(?:\.\d+)?)', r'\1€', text)
-        text = re.sub(r'\$\s*([\d,]+(?:\.\d+)?)', r'\1$', text)
-        text = re.sub(r'£\s*([\d,]+(?:\.\d+)?)', r'\1£', text)
+        text = re.sub(r'€\s*([\d,]*\d(?:\.\d+)?)', r'\1€', text)
+        text = re.sub(r'\$\s*([\d,]*\d(?:\.\d+)?)', r'\1$', text)
+        text = re.sub(r'£\s*([\d,]*\d(?:\.\d+)?)', r'\1£', text)
     text = lowercase(text)
     text = expand_numbers_multilingual(text, lang)
     text = expand_abbreviations_multilingual(text, lang)
