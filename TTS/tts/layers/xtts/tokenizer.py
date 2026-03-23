@@ -576,6 +576,18 @@ def expand_numbers_multilingual(text, lang="en"):
         text = re.sub(_currency_re["GBP"], lambda m: _expand_currency_mt(m, "GBP"), text)
         text = re.sub(_currency_re["USD"], lambda m: _expand_currency_mt(m, "USD"), text)
         text = re.sub(_currency_re["EUR"], lambda m: _expand_currency_mt(m, "EUR"), text)
+        # Handle decimal numbers before the plain integer regex
+        def _expand_decimal_mt(m):
+            parts = m.group(1).replace(",", ".").split(".")
+            integer_str, decimal_str = parts[0], parts[1]
+            result = mt_num2text(int(integer_str)).strip() + " punt"
+            # Read each digit after the point individually (standard spoken convention)
+            for digit in decimal_str:
+                result += " " + mt_num2text(int(digit)).strip()
+            return result
+
+        text = re.sub(_decimal_number_re, _expand_decimal_mt, text)  # must come BEFORE _number_re
+
         text = re.sub(_number_re, lambda m: mt_num2text(int(m.group(0))).strip(), text)
         
     else:
