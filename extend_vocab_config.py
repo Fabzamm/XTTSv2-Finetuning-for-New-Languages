@@ -92,7 +92,7 @@ def extend_tokenizer(args):
             )
             count = 0
             for row in korpus:
-                if count >= args.korpus_max_samples:
+                if args.korpus_max_samples != -1 and count >= args.korpus_max_samples:
                     break
                 text = row["text"]
                 if is_valid_maltese(text):
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     parser.add_argument("--language", type=str, required=True, help="")
     parser.add_argument("--extended_vocab_size", default=2000, type=int, required=True, help="")
     parser.add_argument("--use_korpus", action="store_true", help="Also train on korpus_malti")
-    parser.add_argument("--korpus_max_samples", type=int, default=500_000, help="Max sentences from korpus_malti")
+    parser.add_argument("--korpus_max_samples", type=int, default=-1, help="Max sentences from korpus_malti. -1 means no limit.")
 
     args = parser.parse_args()
 
