@@ -73,6 +73,12 @@ def run_inference(args):
         wav_chunks.append(torch.tensor(wav_chunk["wav"]))
 
     out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0).cpu()
+    
+    # Peak normalize to match save_wav behaviour
+    peak = out_wav.abs().max()
+    if peak > 0:
+        out_wav = out_wav * (0.99 / peak)
+    
     torchaudio.save(args.output_path, out_wav, 24000)
     print(f"✓ Audio saved to {args.output_path}")
 
