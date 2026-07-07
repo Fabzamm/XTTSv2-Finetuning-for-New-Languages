@@ -13,7 +13,7 @@ This guide provides instructions for finetuning XTTSv2 on a new language, using 
 6. [DVAE Finetuning (Optional)](#6-dvae-finetuning-optional)
 7. [GPT Finetuning](#7-gpt-finetuning)
 8. [TensorBoard Monitoring](#8-tensorboard-monitoring)
-9. [Usage Example](#9-usage-example)
+9. [Inference](#9-inference)
 
 ## 1. Installation
 
@@ -225,71 +225,134 @@ This is particularly useful during GPT finetuning to detect overfitting or confi
  
 ---
 
-## 9. Usage Example
+## 9. Inference
 
-Here's a sample code snippet demonstrating how to use the finetuned model:
+After finetuning the XTTSv2 model, inference can be performed using the provided Colab notebook:
+
+```text
+inference_xtts.ipynb
+```
+
+This notebook loads the finetuned XTTSv2 model, uses a speaker reference audio file, generates Maltese speech from input text, and saves the generated audio as a `.wav` file.
+
+### Inference Notebook Steps
+
+Open `inference_xtts.ipynb` in Google Colab and follow these steps.
+
+### 1. Mount Google Drive
+
+The notebook first mounts Google Drive so that the checkpoint files, vocabulary file, speaker reference audio, and output folder can be accessed.
 
 ```python
-import torch
-import torchaudio
-from tqdm import tqdm
-from underthesea import sent_tokenize
-
-from TTS.tts.configs.xtts_config import XttsConfig
-from TTS.tts.models.xtts import Xtts
-
-# Device configuration
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
-
-# Model paths
-xtts_checkpoint = "checkpoints/GPT_XTTS_FT-August-30-2024_08+19AM-6a6b942/best_model_99875.pth"
-xtts_config = "checkpoints/GPT_XTTS_FT-August-30-2024_08+19AM-6a6b942/config.json"
-xtts_vocab = "checkpoints/XTTS_v2.0_original_model_files/vocab.json"
-
-# Load model
-config = XttsConfig()
-config.load_json(xtts_config)
-XTTS_MODEL = Xtts.init_from_config(config)
-XTTS_MODEL.load_checkpoint(config, checkpoint_path=xtts_checkpoint, vocab_path=xtts_vocab, use_deepspeed=False)
-XTTS_MODEL.to(device)
-
-print("Model loaded successfully!")
-
-# Inference
-tts_text = "Toni tagħna tani tina talli tajtu tuta tajba."
-speaker_audio_file = "ref.wav"
-lang = "mt"
-
-gpt_cond_latent, speaker_embedding = XTTS_MODEL.get_conditioning_latents(
-    audio_path=speaker_audio_file,
-    gpt_cond_len=XTTS_MODEL.config.gpt_cond_len,
-    max_ref_length=XTTS_MODEL.config.max_ref_len,
-    sound_norm_refs=XTTS_MODEL.config.sound_norm_refs,
-)
-
-tts_texts = sent_tokenize(tts_text)
-
-wav_chunks = []
-for text in tqdm(tts_texts):
-    wav_chunk = XTTS_MODEL.inference(
-        text=text,
-        language=lang,
-        gpt_cond_latent=gpt_cond_latent,
-        speaker_embedding=speaker_embedding,
-        temperature=0.1,
-        length_penalty=1.0,
-        repetition_penalty=10.0,
-        top_k=10,
-        top_p=0.3,
-    )
-    wav_chunks.append(torch.tensor(wav_chunk["wav"]))
-
-out_wav = torch.cat(wav_chunks, dim=0).unsqueeze(0).cpu()
-
-# Play audio (for Jupyter Notebook)
-from IPython.display import Audio
-Audio(out_wav, rate=24000)
+from google.colab import drive
+drive.mount('/content/drive')
 ```
+
+### 2. Set Up the Colab Environment
+
+The notebook installs and configures the required environment for XTTSv2 inference.
+
+This includes:
+
+* installing Python 3.10
+* checking the active Python version
+* installing the required dependencies
+* fixing possible Colab dependency conflicts
+
+### 3. Clone or Open the Repository
+
+The notebook checks whether the repository already exists in the Colab runtime. If it does not exist, it clones the repository from GitHub.
+
+```python
+REPO_DIR = "/content/XTTSv2-Finetuning-for-New-Languages"
+```
+
+After this, the notebook changes directory into the repository folder so that the inference script can be used.
+
+### 4. Install Required Dependencies
+
+The notebook installs the packages required to run inference.
+
+This includes:
+
+```bash
+pip install torchcodec
+pip install -r requirements.txt
+pip install ipython
+```
+
+The notebook may also remove conflicting `blinker` versions, since Google Colab sometimes includes a version that conflicts with the required dependencies.
+
+### 5. Configure the Inference Settings
+
+Before running inference, update the main inference variables in the notebook.
+
+These variables define the text to synthesise, the model files to use, the speaker reference audio, and the output location.
+
+| Variable     | Description                                               |
+| ------------ | --------------------------------------------------------- |
+| `TEXT`       | The Maltese text that will be converted into speech       |
+| `CHECKPOINT` | Path to the finetuned XTTSv2 checkpoint                   |
+| `CONFIG`     | Path to the `config.json` file from the same training run |
+| `VOCAB`      | Path to the `vocab.json` file used by the model           |
+| `SPEAKER`    | Path to the reference speaker audio file                  |
+| `OUTPUT`     | Path where the generated `.wav` file will be saved        |
+| `SPEED`      | Speech speed. `1` means normal speed                      |
+
+Example:
+
+```python
+TEXT = "Din hija sentenza biex nara kif jaħdem il-mudell."
+
+CHECKPOINT = "/content/drive/MyDrive/checkpoints/GPT_XTTS_FT-.../best_model.pth"
+CONFIG = "/content/drive/MyDrive/checkpoints/GPT_XTTS_FT-.../config.json"
+VOCAB = "/content/drive/MyDrive/checkpoints/XTTS_v2.0_original_model_files/vocab.json"
+
+SPEAKER = "/content/drive/MyDrive/voices/ref.wav"
+OUTPUT = "/content/drive/MyDrive/outputs/generated_maltese_audio.wav"
+
+SPEED = 1
+```
+
+> **Important:** The checkpoint, config file, and vocabulary file should belong to the same training setup. Mixing files from different runs may cause errors or poor-quality output.
+
+### 6. Run Inference
+
+After updating the paths and text, run the inference cell in the notebook.
+
+The notebook uses `run_inference.py` to generate the audio:
+
+```bash
+python run_inference.py \
+  --checkpoint CHECKPOINT \
+  --config CONFIG \
+  --vocab VOCAB \
+  --speaker_audio SPEAKER \
+  --text TEXT \
+  --output_path OUTPUT \
+  --speed SPEED
+```
+
+The generated audio will be saved to the file path specified in `OUTPUT`.
+
+### 7. Play the Generated Audio
+
+After inference finishes, the generated `.wav` file can be played directly inside the Colab notebook:
+
+```python
+from IPython.display import Audio
+
+Audio(OUTPUT)
+```
+
+### Notes
+
+The speaker reference audio should be a clear `.wav` file with minimal background noise, since XTTSv2 uses it for voice cloning.
+
+For best results, use short and clear Maltese sentences when testing the model. Long paragraphs can be split into smaller sentences before inference.
+
+
+
 
 ## Notes
  
