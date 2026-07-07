@@ -5,74 +5,28 @@ This is a forked version of [anhnh2002/XTTSv2-Finetuning-for-New-Languages](http
 This guide provides instructions for finetuning XTTSv2 on a new language, using Maltese (`mt`) as an example.
 
 ## Table of Contents
-1. [Installation](#1-installation)
-2. [Pipeline Overview](#2-pipeline-overview)
-3. [Data Preparation](#3-data-preparation)
-4. [Pretrained Model Download](#4-pretrained-model-download)
-5. [Vocabulary Extension and Configuration Adjustment](#5-vocabulary-extension-and-configuration-adjustment)
-6. [DVAE Finetuning (Optional)](#6-dvae-finetuning-optional)
-7. [GPT Finetuning](#7-gpt-finetuning)
-8. [TensorBoard Monitoring](#8-tensorboard-monitoring)
-9. [Inference](#9-inference)
+1. [Pipeline Overview](#1-pipeline-overview)
+2. [Data Preparation](#2-data-preparation)
+3. [Fine-Tuning](#3-fine-tuning)
+4. [Inference](#4-inference)
+5. [Notes](#5-notes)
 
-## 1. Installation
-
-Using Google Colab:
-
-Follow these steps in the provided Colab notebook:
- 
-1. **Mount Google Drive** to access your datasets and save checkpoints:
-   ```python
-   from google.colab import drive
-   drive.mount('/content/drive')
-   ```
- 
-2. **Install Python 3.10** and set it as the default interpreter.
- 
-3. **Check GPU availability**:
-   ```python
-   import torch
-   print(torch.cuda.is_available())
-   ```
- 
-4. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Fabzamm/XTTSv2-Finetuning-for-New-Languages.git
-   cd XTTSv2-Finetuning-for-New-Languages
-   ```
- 
-5. **Fix blinker dependency conflict** (Colab sometimes ships a conflicting version):
-   ```bash
-   !find /usr/lib/python3 -name "blinker*" -exec rm -rf {} + 2>/dev/null
-   !find /usr/local/lib/python3.10 -name "blinker*" -exec rm -rf {} + 2>/dev/null
-   ```
-
-6. **Install TorchCodec**:
-   ```bash
-   !pip install torchcodec
-   ```
- 
-7. **Install requirements**:
-   ```bash
-   cd /content/XTTSv2-Finetuning-for-New-Languages
-   pip install -r requirements.txt
-   ```
-
-## 2. Pipeline Overview
+## 1. Pipeline Overview
 
 The full finetuning pipeline follows these steps:
  
-1. **Google Drive** → Load datasets (MASRI + Common Voice)
-2. **Environment setup** — Python 3.10, GPU check, install libraries
-3. **Clone XTTS repo** and navigate into it
-4. **Download pretrained model** (XTTS v2 base checkpoint)
-5. **Extend vocabulary** for Maltese using training metadata and optionally Korpus Malti
-6. **Train DVAE** — teaches the model to encode audio into discrete acoustic tokens
-7. **Train GPT** — finetunes the language model to map text to audio tokens
-8. **Monitor with TensorBoard** — track loss and training progress
-9. **Run inference** — generate speech from text using the finetuned model
+1. **Prepare datasets** — organise the MASRI and Common Voice datasets.
+2. **Open the fine-tuning notebook** — use `finetuning_xtts.ipynb` in Google Colab.
+3. **Set up the environment** — mount Google Drive, install Python 3.10, check GPU availability, clone the repository, and install dependencies.
+4. **Configure dataset paths** — set the paths for the MASRI dataset, Common Voice dataset, combined metadata files, and checkpoints.
+5. **Download the pretrained XTTSv2 model** — download the base XTTSv2 checkpoint.
+6. **Extend vocabulary** — adapt the tokenizer for Maltese using the training metadata and optionally Korpus Malti.
+7. **Train DVAE** — optionally finetune the DVAE component on Maltese audio.
+8. **Train GPT** — finetune the main XTTSv2 GPT model.
+9. **Monitor training** — optionally use TensorBoard to track training loss and progress.
+10. **Run inference** — use `inference_xtts.ipynb` to generate Maltese speech using the finetuned model.
  
-## 3. Data Preparation
+## 2. Data Preparation
 
 ### Datasets Used for Maltese
  
@@ -80,14 +34,6 @@ Two datasets are used for Maltese finetuning:
  
 - **MASRI dataset** — Maltese speech corpus
 - **Common Voice dataset** — Mozilla's crowd-sourced Maltese speech data
- 
-Configure the paths at the top of your notebook or script:
- 
-```python
-LANGUAGE = "mt"
-MASRI_DIR = "/content/drive/MyDrive/..."
-CV_DIR = "/content/drive/MyDrive/..."
-```
 
 ### Directory Structure
 
@@ -129,103 +75,305 @@ wavs/yyy.wav|Nice to meet you.|@Y
 wavs/zzz.wav|Good to see you.|@Z
 ```
 
-## 4. Pretrained Model Download
+For Maltese training, the notebook expects paths for the MASRI dataset, Common Voice dataset, and the combined training and evaluation metadata files.
 
-Execute the following command to download the pretrained XTTS v2 base model:
-
-```bash
-python download_checkpoint.py --output_path checkpoints/
-```
-
-## 5. Vocabulary Extension and Configuration Adjustment
-
-Extend the vocabulary and adjust the configuration with:
+Example:
 
 ```bash
-python extend_vocab_config.py \
-  --output_path=checkpoints/ \
-  --metadata_path datasets/metadata_train.csv \
-  --language mt \
-  --extended_vocab_size 1000 \
-  --use_korpus \
-  --korpus_max_samples 50000
+LANGUAGE = "mt"
+
+MASRI_DIR = "/content/drive/MyDrive/path/to/MASRI"
+CV_DIR = "/content/drive/MyDrive/path/to/CV"
+
+COMBINED_DIR = "/content/drive/MyDrive/path/to/Combined"
+CHECKPOINT_DIR = "/content/drive/MyDrive/path/to/checkpoints"
 ```
 
-### Flag Reference
- 
-| Flag | Description |
-|---|---|
-| `--use_korpus` | Also trains the tokenizer on the [Korpus Malti](https://huggingface.co/datasets/MLRS/korpus_malti) streaming dataset, giving broader Maltese vocabulary coverage |
-| `--korpus_max_samples` | Maximum number of sentences to stream from Korpus Malti. Set to `-1` for no limit |
- 
-> **Note:** The `masri/` directory contains Maltese-specific tokenization logic used during vocabulary extension. In particular, `masri/tokeniser/km_tokeniser.py` implements a Maltese tokenizer that is used internally when processing the training data.
- 
+## 3. Fine-Tuning
+
+Fine-tuning can be performed using the provided Google Colab notebook:
+
+```text
+finetuning_xtts.ipynb
+```
+
+This notebook prepares the Colab environment, loads the datasets, downloads the pretrained XTTSv2 model, extends the vocabulary for Maltese, optionally trains the DVAE component, trains the GPT component, and optionally opens TensorBoard for monitoring.
+
+### Fine-Tuning Notebook Steps
+
+Open `finetuning_xtts.ipynb` in Google Colab and follow these steps.
+
 ---
 
-## 6. DVAE Finetuning (Optional)
+### 1. Mount Google Drive
 
-The DVAE (Discrete Variational Autoencoder) learns to convert raw audio into discrete acoustic tokens. This is a compact representation the GPT model later learns to predict. Finetuning it on your target language can improve audio quality.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_dvae_xtts.py \
---output_path=checkpoints/ \
---train_csv_path=datasets/metadata_train.csv \
---eval_csv_path=datasets/metadata_eval.csv \
---language="mt" \
---num_epochs=5 \
---batch_size=128 \
---lr=5e-6
-```
-
-> **Tip:** If you have approximately 20 hours of short audio clips in your dataset, DVAE finetuning is not required — the pretrained DVAE generalises well enough.
- 
----
-
-## 7. GPT Finetuning
-
-The GPT model is the core of XTTS. It learns to map text tokens to audio tokens conditioned on a speaker reference. Finetuning it on your target language data gives the model natural pronunciation and prosody in that language.
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_gpt_xtts.py \
---output_path=checkpoints/ \
---metadatas "datasets/metadata_train.csv,datasets/metadata_eval.csv,mt" \
---num_epochs=5 \
---batch_size=2 \
---grad_acumm=16 \
---max_text_length=400 \
---max_audio_length=330750 \
---weight_decay=1e-2 \
---lr=5e-6 \
---save_step=4443 \
---save_n_checkpoints=100
-```
-
-### Resuming Training from a Checkpoint
- 
-Use `--restore_path` to resume an interrupted training run:
- 
-```bash
-CUDA_VISIBLE_DEVICES=0 python train_gpt_xtts.py \
-  --output_path=checkpoints/ \
-  --metadatas "datasets/metadata_train.csv,datasets/metadata_eval.csv,mt" \
-  --restore_path "checkpoints/GPT_XTTS_FT-.../best_model.pth" \
-  --num_epochs=5 \
-  ...
-```
-
-## 8. TensorBoard Monitoring
-
-You can monitor training loss and progress in real time using TensorBoard:
+The notebook first mounts Google Drive so that datasets, checkpoints, and training outputs can be accessed and saved.
 
 ```python
-%tensorboard --logdir checkpoints/run/training/
+from google.colab import drive
+drive.mount('/content/drive')
 ```
- 
-This is particularly useful during GPT finetuning to detect overfitting or confirm the loss is converging as expected.
- 
+
+This is important because Colab runtime storage is temporary. Saving checkpoints to Google Drive prevents them from being lost when the session disconnects.
+
 ---
 
-## 9. Inference
+### 2. Set Up the Colab Environment
+
+The notebook installs Python 3.10, sets it as the default interpreter, reinstalls `pip`, and verifies the Python version.
+
+It also checks whether a GPU is available:
+
+```python
+import torch
+
+print(f"CUDA available: {torch.cuda.is_available()}")
+
+if torch.cuda.is_available():
+    print(torch.cuda.get_device_name(0))
+```
+
+A GPU is strongly recommended for XTTSv2 fine-tuning.
+
+---
+
+### 3. Clone or Open the Repository
+
+The notebook checks whether the repository already exists in the Colab runtime. If it does not exist, it clones the repository from GitHub.
+
+```python
+REPO_DIR = "/content/XTTSv2-Finetuning-for-New-Languages"
+```
+
+If the folder does not already exist, the notebook clones the repository:
+
+```bash
+git clone https://github.com/Fabzamm/XTTSv2-Finetuning-for-New-Languages.git
+```
+
+Then it changes directory into the repository folder:
+
+```python
+%cd /content/XTTSv2-Finetuning-for-New-Languages
+```
+
+---
+
+### 4. Install Required Dependencies
+
+The notebook installs the required packages for XTTSv2 fine-tuning.
+
+It first removes possible conflicting `blinker` versions from Colab:
+
+```bash
+!find /usr/lib/python3 -name "blinker*" -exec rm -rf {} + 2>/dev/null
+!find /usr/local/lib/python3.10 -name "blinker*" -exec rm -rf {} + 2>/dev/null
+```
+
+Then it installs TorchCodec:
+
+```bash
+!pip install torchcodec
+```
+
+Finally, it installs the repository requirements:
+
+```bash
+%cd /content/XTTSv2-Finetuning-for-New-Languages
+!pip install -r requirements.txt
+```
+
+---
+
+### 5. Configure Dataset and Checkpoint Paths
+
+The notebook then sets the main paths used during training.
+
+You should update these paths according to where your own datasets and checkpoints are stored in Google Drive.
+
+```python
+import pandas as pd
+import os
+
+LANGUAGE = "mt"
+
+MASRI_DIR = "/content/drive/MyDrive/path/to/MASRI"
+CV_DIR = "/content/drive/MyDrive/path/to/CV"
+
+MASRI_TRAIN_CSV = os.path.join(MASRI_DIR, "metadata_train.csv")
+MASRI_EVAL_CSV = os.path.join(MASRI_DIR, "metadata_eval.csv")
+
+CV_TRAIN_CSV = os.path.join(CV_DIR, "metadata_train.csv")
+CV_EVAL_CSV = os.path.join(CV_DIR, "metadata_eval.csv")
+
+COMBINED_DIR = "/content/drive/MyDrive/path/to/Combined"
+
+COMBINED_TRAIN_CSV = os.path.join(COMBINED_DIR, "metadata_train.csv")
+COMBINED_EVAL_CSV = os.path.join(COMBINED_DIR, "metadata_eval.csv")
+
+CHECKPOINT_DIR = "/content/drive/MyDrive/path/to/checkpoints"
+
+EXTENDED_VOCAB_SIZE = 1000
+
+os.makedirs(CHECKPOINT_DIR, exist_ok=True)
+```
+
+The notebook also prints the number of rows in the combined training and evaluation metadata files. This helps confirm that the CSV files are being loaded correctly.
+
+---
+
+### 6. Download the Pretrained XTTSv2 Model
+
+The notebook includes a cell to download the pretrained XTTSv2 base checkpoint:
+
+```bash
+!python download_checkpoint.py --output_path {CHECKPOINT_DIR}
+```
+
+This only needs to be run once.
+
+If the pretrained model files already exist in your checkpoint folder, you do not need to run this cell again.
+
+---
+
+### 7. Extend the Vocabulary for Maltese
+
+The notebook includes a cell to extend the tokenizer vocabulary for Maltese:
+
+```bash
+!python extend_vocab_config.py \
+    --output_path={CHECKPOINT_DIR} \
+    --metadata_path={COMBINED_TRAIN_CSV} \
+    --language={LANGUAGE} \
+    --extended_vocab_size={EXTENDED_VOCAB_SIZE} \
+    --use_korpus
+```
+
+This step adapts the XTTSv2 vocabulary to better support Maltese text.
+
+The `--use_korpus` flag also uses the [Korpus Malti](https://huggingface.co/datasets/MLRS/korpus_malti) streaming dataset to improve Maltese vocabulary coverage.
+
+### Flag Reference
+
+| Flag | Description |
+|---|---|
+| `--use_korpus` | Also trains the tokenizer on the Korpus Malti streaming dataset, giving broader Maltese vocabulary coverage |
+| `--korpus_max_samples` | Maximum number of sentences to stream from Korpus Malti. Set to `-1` for no limit |
+| `--extended_vocab_size` | Number of new vocabulary tokens to add for the target language |
+
+> **Note:** The `masri/` directory contains Maltese-specific tokenization logic used during vocabulary extension. In particular, `masri/tokeniser/km_tokeniser.py` implements a Maltese tokenizer that is used internally when processing the training data.
+
+---
+
+### 8. Train the DVAE Component Optional
+
+The DVAE, or Discrete Variational Autoencoder, learns to convert raw audio into discrete acoustic tokens. These tokens are later used by the GPT component.
+
+The notebook includes a DVAE training cell, but this step is optional.
+
+```python
+DVAE_EPOCHS = 5
+DVAE_BATCH_SIZE = 128
+DVAE_LR = 5e-6
+```
+
+The training command is:
+
+```bash
+!python train_dvae_xtts.py \
+    --output_path={CHECKPOINT_DIR} \
+    --train_csv_path={COMBINED_TRAIN_CSV} \
+    --eval_csv_path={COMBINED_EVAL_CSV} \
+    --language={LANGUAGE} \
+    --num_epochs={DVAE_EPOCHS} \
+    --batch_size={DVAE_BATCH_SIZE} \
+    --lr={DVAE_LR}
+```
+
+> **Tip:** If you have approximately 20 hours of short audio clips in your dataset, DVAE finetuning is not required. The pretrained DVAE usually generalises well enough.
+
+---
+
+### 9. Train the GPT Component
+
+The GPT model is the main component of XTTSv2 fine-tuning. It learns to map text tokens to audio tokens conditioned on a speaker reference.
+
+The notebook defines the GPT training hyperparameters:
+
+```python
+GPT_EPOCHS = 3
+GPT_BATCH_SIZE = 2
+GPT_GRAD_ACCUM = 16
+GPT_MAX_TEXT_LEN = 400
+GPT_MAX_AUDIO_LEN = 330750
+GPT_WEIGHT_DECAY = 1e-2
+GPT_LR = 5e-6
+GPT_SAVE_STEP = 4443
+GPT_SAVE_N_CHECKPOINTS = 100
+```
+
+The notebook supports training with both MASRI and Common Voice metadata:
+
+```python
+METADATA_ARG_MASRI = f"{MASRI_TRAIN_CSV},{MASRI_EVAL_CSV},{LANGUAGE}"
+METADATA_ARG_CV = f"{CV_TRAIN_CSV},{CV_EVAL_CSV},{LANGUAGE}"
+```
+
+The GPT training command is:
+
+```bash
+!python train_gpt_xtts.py \
+    --output_path {CHECKPOINT_DIR} \
+    --metadatas "{METADATA_ARG_MASRI}" "{METADATA_ARG_CV}" \
+    --num_epochs {GPT_EPOCHS} \
+    --batch_size {GPT_BATCH_SIZE} \
+    --grad_acumm {GPT_GRAD_ACCUM} \
+    --max_text_length {GPT_MAX_TEXT_LEN} \
+    --max_audio_length {GPT_MAX_AUDIO_LEN} \
+    --weight_decay {GPT_WEIGHT_DECAY} \
+    --lr {GPT_LR} \
+    --save_step {GPT_SAVE_STEP} \
+    --save_n_checkpoints {GPT_SAVE_N_CHECKPOINTS}
+```
+
+---
+
+### 10. Resume GPT Training from a Checkpoint
+
+The notebook also supports resuming training from an existing checkpoint.
+
+To resume training, set `RESTORE_CHECKPOINT` to the path of the checkpoint you want to continue from:
+
+```python
+RESTORE_CHECKPOINT = "/content/drive/MyDrive/path/to/checkpoint.pth"
+```
+
+If you do not want to resume from a checkpoint, set:
+
+```python
+RESTORE_CHECKPOINT = None
+```
+
+The notebook automatically adds the `--restore_path` argument when a restore checkpoint is provided.
+
+---
+
+### 11. Monitor Training with TensorBoard
+
+The notebook includes an optional TensorBoard cell.
+
+TensorBoard can be used to monitor training loss and progress:
+
+```python
+%load_ext tensorboard
+%tensorboard --logdir /content/drive/MyDrive/path/to/checkpoints
+```
+
+This is useful during GPT fine-tuning to check whether the loss is decreasing and whether the model is training as expected.
+
+---
+
+## 4. Inference
 
 After finetuning the XTTSv2 model, inference can be performed using the provided Colab notebook:
 
@@ -354,7 +502,7 @@ For best results, use short and clear Maltese sentences when testing the model. 
 
 
 
-## Notes
+## 5. Notes
  
 > The first two notes below are from the original upstream repository: [anhnh2002/XTTSv2-Finetuning-for-New-Languages](https://github.com/anhnh2002/XTTSv2-Finetuning-for-New-Languages)
  
